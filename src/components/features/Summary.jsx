@@ -81,27 +81,27 @@ export default function Summary() {
                                 transition={{ delay: idx * 0.1 + 0.4 }}
                                 className="group hover:bg-zinc-800/20 transition-colors"
                             >
-                                <td className="p-2 sm:p-3 font-medium text-zinc-200 flex items-center gap-2">
-                                    <span className="text-sm sm:text-lg bg-zinc-800/40 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg border border-zinc-700/30">{person.emoji}</span>
-                                    <span className="truncate max-w-[60px] sm:max-w-none text-xs sm:text-sm">{person.name}</span>
-                                    {person.isOwner && <span className="text-[8px] sm:text-[9px] bg-green-900/20 text-green-400 px-1 py-0.5 rounded border border-green-900/30 font-bold tracking-wide">YOU</span>}
+                                <td className="p-1.5 sm:p-3 font-medium text-zinc-200 flex items-center gap-1.5">
+                                    <span className="text-xs sm:text-lg bg-zinc-800/40 w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center rounded border border-zinc-700/30">{person.emoji}</span>
+                                    <span className="truncate max-w-[65px] sm:max-w-none text-[10px] sm:text-sm">{person.name}</span>
+                                    {person.isOwner && <span className="text-[7px] sm:text-[9px] bg-green-900/20 text-green-400 px-0.5 py-0 rounded border border-green-900/30 font-bold tracking-wide">YOU</span>}
                                 </td>
-                                <td className="p-2 sm:p-3 text-right text-zinc-300 font-bold text-xs sm:text-sm">
+                                <td className="p-1.5 sm:p-3 text-right text-zinc-300 font-bold text-[10px] sm:text-sm">
                                     ₹{(person.personalTotal + person.sharedTotal).toFixed(0)}
                                 </td>
-                                <td className="p-2 sm:p-3 text-right font-bold text-green-400 bg-green-500/5 border-l border-zinc-800/40 relative group/cell text-xs sm:text-sm">
+                                <td className="p-1.5 sm:p-3 text-right font-bold text-green-400 bg-green-500/5 border-l border-zinc-800/40 relative group/cell text-[10px] sm:text-sm">
                                     <div className="flex items-center justify-end gap-1 sm:gap-2">
                                         {Math.abs(person.total) > 1 && !person.isOwner && (
                                             <button
                                                 onClick={() => settlePerson(person.id)}
-                                                className={`opacity-100 sm:opacity-0 sm:group-hover/cell:opacity-100 p-1 rounded-full text-white transition-all shadow-lg transform active:scale-90 ${person.total > 0 ? 'bg-green-500 hover:bg-green-400' : 'bg-red-500 hover:bg-red-400'}`}
+                                                className={`opacity-100 sm:opacity-0 sm:group-hover/cell:opacity-100 p-0.5 rounded-full text-white transition-all shadow-lg transform active:scale-90 ${person.total > 0 ? 'bg-green-500 hover:bg-green-400' : 'bg-red-500 hover:bg-red-400'}`}
                                                 title="Settle Up"
                                             >
-                                                <Check size={10} className="sm:w-3 sm:h-3" />
+                                                <Check size={8} className="sm:w-3 sm:h-3" />
                                             </button>
                                         )}
                                         {Math.abs(person.total) < 1 && !person.isOwner && (
-                                            <span className="text-green-500 flex items-center"><Check size={12} className="sm:w-[14px] sm:h-[14px]" /></span>
+                                            <span className="text-green-500 flex items-center"><Check size={10} className="sm:w-[14px] sm:h-[14px]" /></span>
                                         )}
                                         <span>₹{Math.max(0, person.total).toFixed(0)}</span>
                                     </div>

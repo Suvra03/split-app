@@ -33,7 +33,7 @@ function Dashboard() {
         <div className="h-0.5 w-full bg-gradient-to-r from-green-500 to-transparent mt-6 shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
       </motion.header>
 
-      <main className="space-y-8">
+      <main className="space-y-5 sm:space-y-8">
         <section>
           <PeopleManager />
         </section>
