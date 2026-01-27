@@ -31,6 +31,21 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
+  /* Prevent horizontal scroll */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  overflow-x: hidden;
 }
 
 h1 {
