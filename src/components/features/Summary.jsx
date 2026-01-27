@@ -66,10 +66,10 @@ export default function Summary() {
             <div className="overflow-hidden rounded-2xl border border-zinc-800/40 bg-zinc-950/20">
                 <table className="w-full text-left text-sm border-collapse">
                     <thead>
-                        <tr className="bg-zinc-900/40 text-zinc-500 text-xs uppercase tracking-wider">
-                            <th className="p-3 font-bold">Person</th>
-                            <th className="p-3 text-right font-bold w-1/3">Expense Scope</th>
-                            <th className="p-3 text-right font-bold w-1/3 bg-zinc-900/60 text-zinc-400">Net Due</th>
+                        <tr className="bg-zinc-900/40 text-zinc-500 text-[10px] sm:text-xs uppercase tracking-wider">
+                            <th className="p-2 sm:p-3 font-bold">Person</th>
+                            <th className="p-2 sm:p-3 text-right font-bold w-[30%] sm:w-1/3 leading-tight">Exp. Scope</th>
+                            <th className="p-2 sm:p-3 text-right font-bold w-[30%] sm:w-1/3 bg-zinc-900/60 text-zinc-400">Net Due</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/40">
@@ -81,27 +81,27 @@ export default function Summary() {
                                 transition={{ delay: idx * 0.1 + 0.4 }}
                                 className="group hover:bg-zinc-800/20 transition-colors"
                             >
-                                <td className="p-3 font-medium text-zinc-200 flex items-center gap-2">
-                                    <span className="text-lg bg-zinc-800/40 w-6 h-6 flex items-center justify-center rounded-lg border border-zinc-700/30">{person.emoji}</span>
-                                    <span className="truncate max-w-[80px] sm:max-w-none">{person.name}</span>
-                                    {person.isOwner && <span className="text-[9px] bg-green-900/20 text-green-400 px-1 py-0.5 rounded border border-green-900/30 font-bold tracking-wide">YOU</span>}
+                                <td className="p-2 sm:p-3 font-medium text-zinc-200 flex items-center gap-2">
+                                    <span className="text-sm sm:text-lg bg-zinc-800/40 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg border border-zinc-700/30">{person.emoji}</span>
+                                    <span className="truncate max-w-[60px] sm:max-w-none text-xs sm:text-sm">{person.name}</span>
+                                    {person.isOwner && <span className="text-[8px] sm:text-[9px] bg-green-900/20 text-green-400 px-1 py-0.5 rounded border border-green-900/30 font-bold tracking-wide">YOU</span>}
                                 </td>
-                                <td className="p-3 text-right text-zinc-300 font-bold">
+                                <td className="p-2 sm:p-3 text-right text-zinc-300 font-bold text-xs sm:text-sm">
                                     ₹{(person.personalTotal + person.sharedTotal).toFixed(0)}
                                 </td>
-                                <td className="p-3 text-right font-bold text-green-400 bg-green-500/5 border-l border-zinc-800/40 relative group/cell">
-                                    <div className="flex items-center justify-end gap-2">
+                                <td className="p-2 sm:p-3 text-right font-bold text-green-400 bg-green-500/5 border-l border-zinc-800/40 relative group/cell text-xs sm:text-sm">
+                                    <div className="flex items-center justify-end gap-1 sm:gap-2">
                                         {Math.abs(person.total) > 1 && !person.isOwner && (
                                             <button
                                                 onClick={() => settlePerson(person.id)}
-                                                className={`opacity-0 group-hover/cell:opacity-100 p-1 rounded-full text-white transition-all shadow-lg transform active:scale-90 ${person.total > 0 ? 'bg-green-500 hover:bg-green-400' : 'bg-red-500 hover:bg-red-400'}`}
+                                                className={`opacity-100 sm:opacity-0 sm:group-hover/cell:opacity-100 p-1 rounded-full text-white transition-all shadow-lg transform active:scale-90 ${person.total > 0 ? 'bg-green-500 hover:bg-green-400' : 'bg-red-500 hover:bg-red-400'}`}
                                                 title="Settle Up"
                                             >
-                                                <Check size={12} />
+                                                <Check size={10} className="sm:w-3 sm:h-3" />
                                             </button>
                                         )}
                                         {Math.abs(person.total) < 1 && !person.isOwner && (
-                                            <span className="text-green-500 flex items-center"><Check size={14} /></span>
+                                            <span className="text-green-500 flex items-center"><Check size={12} className="sm:w-[14px] sm:h-[14px]" /></span>
                                         )}
                                         <span>₹{Math.max(0, person.total).toFixed(0)}</span>
                                     </div>
