@@ -79,7 +79,7 @@ function App() {
   return (
     <SplitProvider>
       <BrowserRouter>
-        <div className="min-h-screen bg-black text-white p-4 font-inter selection:bg-green-500/30 overflow-x-hidden relative">
+        <div className="min-h-screen bg-black text-white p-3 sm:p-4 font-inter selection:bg-green-500/30 overflow-x-hidden relative">
           {/* Animated Background Mesh - Dark Green */}
           <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
             <div className="absolute top-[-10%] left-[20%] w-[40%] h-[40%] bg-green-900/20 rounded-full blur-[100px] animate-pulse" />
