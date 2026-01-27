@@ -63,8 +63,8 @@ export default function ItemManager() {
 
             {/* Add Item Form */}
             <form onSubmit={handleSubmit} className="mb-8 space-y-5">
-                <div className="grid grid-cols-5 gap-3">
-                    <div className="col-span-3">
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                    <div className="col-span-1 sm:col-span-3">
                         <label className="block text-xs uppercase text-zinc-500 mb-1 ml-1 font-bold tracking-wider">Name</label>
                         <input
                             type="text"
@@ -74,7 +74,7 @@ export default function ItemManager() {
                             className="w-full bg-zinc-950/30 border border-zinc-800/50 text-zinc-100 rounded-xl px-4 py-3 outline-none focus:border-green-500/30 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-zinc-600"
                         />
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1 sm:col-span-2">
                         <label className="block text-xs uppercase text-zinc-500 mb-1 ml-1 font-bold tracking-wider">Price</label>
                         <div className="relative">
                             <span className="absolute left-3 top-3 text-zinc-500">₹</span>
@@ -99,8 +99,8 @@ export default function ItemManager() {
                                 type="button"
                                 onClick={() => setPaidBy(p.id)}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${paidBy === p.id
-                                        ? 'bg-zinc-700 text-white shadow-md ring-1 ring-white/10'
-                                        : 'text-zinc-500 hover:text-zinc-300'
+                                    ? 'bg-zinc-700 text-white shadow-md ring-1 ring-white/10'
+                                    : 'text-zinc-500 hover:text-zinc-300'
                                     }`}
                             >
                                 <span>{p.emoji}</span>
