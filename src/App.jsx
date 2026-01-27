@@ -51,11 +51,28 @@ function Dashboard() {
         </section>
       </main>
 
-      <footer className="text-center text-zinc-700 text-sm mt-20">
+      <footer className="text-center text-zinc-700 text-sm mt-20 pb-8 flex flex-col items-center gap-4">
         <p>© 2026 Split App • Personal Edition</p>
+        <ResetButton />
       </footer>
     </div>
   )
+}
+
+function ResetButton() {
+  return (
+    <button
+      onClick={() => {
+        if (window.confirm("WARNING: This will delete ALL your data and reset the app. Continue?")) {
+          localStorage.removeItem('split_app_data');
+          window.location.reload();
+        }
+      }}
+      className="text-[10px] text-zinc-800 hover:text-red-500 transition-colors uppercase font-bold tracking-widest border border-zinc-900 hover:border-red-900 px-3 py-1 rounded-full cursor-pointer"
+    >
+      Reset Everything
+    </button>
+  );
 }
 
 function App() {

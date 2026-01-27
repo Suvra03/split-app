@@ -3,8 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 const SplitContext = createContext();
 
-
-
 function splitReducer(state, action) {
     switch (action.type) {
         case 'ADD_PERSON':
@@ -23,25 +21,54 @@ function splitReducer(state, action) {
                 people: state.people.filter(p => p.id !== action.payload)
             };
         case 'ADD_ITEM':
-            const { price, assignedTo, name, type } = action.payload;
+            const { price, assignedTo, name, type, paidBy } = action.payload;
+            // Safe owner check (assuming ID 1 is owner if flag missing, but usually state has it)
+            const ownerId = state.people.find(p => p.isOwner)?.id || '1';
+
             return {
                 ...state,
                 items: [...state.items, { ...action.payload, id: uuidv4() }],
                 people: state.people.map(person => {
-                    if (assignedTo.includes(person.id)) {
-                        const amount = type === 'personal' ? price : (price / assignedTo.length);
-                        const newHistoryItem = {
-                            id: uuidv4(),
-                            date: new Date().toISOString(),
-                            description: name,
-                            amount: amount,
-                            type: 'expense'
-                        };
-                        return {
-                            ...person,
-                            history: [newHistoryItem, ...(person.history || [])]
-                        };
+                    const perPersonShare = type === 'personal' ? price : (price / assignedTo.length);
+                    const payer = paidBy || ownerId;
+
+                    // Case A: Owner Paid (Default)
+                    if (payer === ownerId) {
+                        // If this person consumed it (and is not owner), they owe Owner.
+                        if (assignedTo.includes(person.id) && !person.isOwner) {
+                            const newHistoryItem = {
+                                id: uuidv4(),
+                                date: new Date().toISOString(),
+                                description: name,
+                                amount: perPersonShare,
+                                type: 'expense'
+                            };
+                            return {
+                                ...person,
+                                history: [newHistoryItem, ...(person.history || [])]
+                            };
+                        }
                     }
+                    // Case B: This Person Paid
+                    else if (payer === person.id) {
+                        // If they paid for Owner (Owner assigned)
+                        if (assignedTo.includes(ownerId)) {
+                            // Owner owes them -> Credit them.
+                            // To keep it simple as requested: just show it as a credit entry.
+                            const newHistoryItem = {
+                                id: uuidv4(),
+                                date: new Date().toISOString(),
+                                description: name,
+                                amount: -perPersonShare,
+                                type: 'settlement'
+                            };
+                            return {
+                                ...person,
+                                history: [newHistoryItem, ...(person.history || [])]
+                            };
+                        }
+                    }
+
                     return person;
                 })
             };
@@ -60,20 +87,6 @@ function splitReducer(state, action) {
                 ...state,
                 people: state.people.map(p => {
                     if (p.id === action.payload.id) {
-                        // We are effectively "paying off" the total debt.
-                        // To allow the dashboard to show 0, we set previousBalance to negate the *current* items' sum.
-                        // BUT we also want to record this payment.
-
-                        // Calculating the offsetting balance is complex inside reducer without access to items loop easily (unless we pass amount).
-                        // We passed 'amount' in payload which IS the total debt.
-
-                        // Current Calculation: Total = ItemsShare + PrevBalance
-                        // New Calculation: Total = ItemsShare + NewPrevBalance = 0
-                        // => NewPrevBalance = -ItemsShare
-
-                        // We know Total = Amount. So ItemsShare = Amount - OldPrevBalance.
-                        // NewPrevBalance = -(Amount - OldPrevBalance) = OldPrevBalance - Amount.
-
                         const newHistoryItem = {
                             id: uuidv4(),
                             date: new Date().toISOString(),
@@ -101,6 +114,27 @@ function splitReducer(state, action) {
                     ...p,
                     previousBalance: action.payload.totals[p.id] || 0
                 }))
+            };
+        case 'CLEAR_HISTORY':
+            return {
+                ...state,
+                people: state.people.map(p => {
+                    if (p.id === action.payload) {
+                        return { ...p, history: [] }; // Wipe history
+                    }
+                    return p;
+                })
+            };
+        case 'DELETE_REPORT':
+            return {
+                ...state,
+                reports: state.reports.filter(r => r.id !== action.payload)
+            };
+        case 'RESET_APP':
+            return {
+                people: [{ id: '1', name: 'Suvra', isOwner: true, emoji: '👤' }],
+                items: [],
+                reports: []
             };
         default:
             return state;
@@ -153,18 +187,28 @@ export function SplitProvider({ children }) {
         const person = state.people.find(p => p.id === id);
         if (!person) return;
 
-        let currentLiability = 0;
+        const ownerId = state.people.find(p => p.isOwner)?.id || '1';
+        let currentShare = 0;
+
         state.items.forEach(item => {
-            if (item.assignedTo.includes(id)) {
-                if (item.type === 'personal') {
-                    currentLiability += item.price;
-                } else {
-                    currentLiability += item.price / item.assignedTo.length;
+            const payerId = item.paidBy || ownerId;
+            const perPersonShare = (item.type === 'personal' ? item.price : item.price / item.assignedTo.length);
+
+            // If Owner Paid -> Friend owes Owner (Debit)
+            if (payerId === ownerId) {
+                if (item.assignedTo.includes(person.id)) {
+                    currentShare += perPersonShare;
+                }
+            }
+            // If Friend Paid -> Owner owes Friend (Credit)
+            else if (payerId === person.id) {
+                if (item.assignedTo.includes(ownerId)) {
+                    currentShare -= perPersonShare;
                 }
             }
         });
 
-        const totalDue = currentLiability + (person.previousBalance || 0);
+        const totalDue = currentShare + (person.previousBalance || 0);
 
         // Dispatch SETTLE_DEBT with the total amount to clear
         dispatch({
@@ -174,6 +218,18 @@ export function SplitProvider({ children }) {
                 amount: totalDue
             }
         });
+    };
+
+    const clearHistory = (id) => {
+        if (window.confirm("Are you sure you want to delete this history? It cannot be undone.")) {
+            dispatch({ type: 'CLEAR_HISTORY', payload: id });
+        }
+    };
+
+    const deleteReport = (id) => {
+        if (window.confirm("Are you sure you want to delete this report?")) {
+            dispatch({ type: 'DELETE_REPORT', payload: id });
+        }
     };
 
     const archiveSession = () => {
@@ -208,15 +264,12 @@ export function SplitProvider({ children }) {
         dispatch({ type: 'ARCHIVE_SESSION', payload: { report, totals } });
     };
 
-    const resetSession = () => {
-        // Clear data but keep owner
-        const resetState = {
-            people: [{ id: '1', name: 'Suvra', isOwner: true, emoji: '👤' }],
-            items: []
-        };
-        localStorage.setItem('split_app_data', JSON.stringify(resetState));
-        // Force reload or dispatch a RESET action (not implemented, will rely on reload for MVP simplicity or just manual clean)
-        // Actually let's dispatch a RESET action if we wanted, but for now user didn't ask for reset button.
+    const resetApp = () => {
+        if (window.confirm("CRITICAL: This will delete ALL data (people, items, history, reports). Are you sure?")) {
+            dispatch({ type: 'RESET_APP' });
+            localStorage.removeItem('split_app_data');
+            window.location.reload();
+        }
     };
 
     return (
@@ -230,7 +283,10 @@ export function SplitProvider({ children }) {
             deleteItem,
             updateItem,
             settlePerson,
-            archiveSession
+            clearHistory,
+            archiveSession,
+            deleteReport,
+            resetApp
         }}>
             {children}
         </SplitContext.Provider>

@@ -16,14 +16,26 @@ export default function BalanceCards() {
         // I will just remove the filter.
 
 
-        let currentShare = 0;
+        let expenseScope = 0;
+        let amountPaid = 0;
+        const ownerId = people.find(p => p.isOwner)?.id || '1';
+
         items.forEach(item => {
+            // 1. Calculate Consumption (Expense Scope)
             if (item.assignedTo.includes(person.id)) {
-                currentShare += (item.type === 'personal' ? item.price : item.price / item.assignedTo.length);
+                const myShare = (item.type === 'personal' ? item.price : item.price / item.assignedTo.length);
+                expenseScope += myShare;
+            }
+
+            // 2. Calculate Paid Amount
+            const payerId = item.paidBy || ownerId;
+            if (payerId === person.id) {
+                amountPaid += item.price;
             }
         });
 
-        const totalDue = currentShare + (person.previousBalance || 0);
+        // Net Due = (What I ate) - (What I paid) + (Old Debt)
+        const totalDue = expenseScope - amountPaid + (person.previousBalance || 0);
 
         return {
             ...person,
@@ -68,47 +80,58 @@ export default function BalanceCards() {
                             </div>
 
                             {/* History Scroll Area */}
-                            <div className="bg-zinc-950/30 rounded-xl border border-zinc-800/30 p-3 h-32 overflow-y-auto mb-4 scrollbar-hide">
-                                <div className="flex items-center gap-2 mb-2 text-[10px] text-zinc-500 uppercase font-bold tracking-wider sticky top-0 bg-transparent backdrop-blur-sm">
+                            {/* History Scroll Area */}
+                            <div className="bg-zinc-950/30 rounded-xl border border-zinc-800/30 p-3 mb-4 h-32 flex flex-col">
+                                <div className="flex items-center gap-2 mb-2 text-[10px] text-zinc-500 uppercase font-bold tracking-wider flex-shrink-0">
                                     <History size={10} /> Recent Activity
                                 </div>
-                                {person.history.length === 0 ? (
-                                    <p className="text-zinc-600 text-xs text-center py-8 italic">No recent history</p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {person.history.map(hist => (
-                                            <div key={hist.id} className="flex justify-between items-center text-xs">
-                                                <div className="flex items-center gap-2 overflow-hidden">
-                                                    <span className="text-zinc-500 font-mono text-[10px] whitespace-nowrap">
-                                                        {new Date(hist.date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
-                                                    </span>
-                                                    <span className={`truncate ${hist.type === 'settlement' ? 'text-green-400' : 'text-zinc-300'}`}>
-                                                        {hist.description}
+                                <div className="overflow-y-auto scrollbar-hide flex-1">
+                                    {person.history.length === 0 ? (
+                                        <p className="text-zinc-600 text-xs text-center py-4 italic">No recent history</p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {person.history.map(hist => (
+                                                <div key={hist.id} className="flex justify-between items-center text-xs">
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        <span className="text-zinc-500 font-mono text-[10px] whitespace-nowrap">
+                                                            {new Date(hist.date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
+                                                        </span>
+                                                        <span className={`truncate ${hist.type === 'settlement' ? 'text-green-400' : 'text-zinc-300'}`}>
+                                                            {hist.description}
+                                                        </span>
+                                                    </div>
+                                                    <span className={`font-medium whitespace-nowrap ${hist.type === 'settlement' ? 'text-green-500' : 'text-red-400'}`}>
+                                                        {hist.type === 'settlement' ? '' : '+'}{hist.amount > 0 ? `₹${hist.amount.toFixed(0)}` : `₹${Math.abs(hist.amount).toFixed(0)}`}
                                                     </span>
                                                 </div>
-                                                <span className={`font-medium whitespace-nowrap ${hist.type === 'settlement' ? 'text-green-500' : 'text-red-400'}`}>
-                                                    {hist.type === 'settlement' ? '' : '+'}{hist.amount > 0 ? `₹${hist.amount.toFixed(0)}` : `₹${Math.abs(hist.amount).toFixed(0)}`}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            <button
-                                onClick={() => settlePerson(person.id)}
-                                disabled={person.totalDue <= 0}
-                                className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${person.totalDue > 0
-                                    ? 'bg-green-600 hover:bg-green-500 text-white shadow-green-900/20 active:scale-[0.98]'
-                                    : 'bg-zinc-800/50 text-zinc-500 cursor-not-allowed'
-                                    }`}
-                            >
-                                {person.totalDue > 0 ? (
-                                    <><Check size={16} /> Clear Due</>
-                                ) : (
-                                    <><Check size={16} /> All Settled</>
-                                )}
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => settlePerson(person.id)}
+                                    disabled={Math.abs(person.totalDue) < 1}
+                                    className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${person.totalDue > 1
+                                        ? 'bg-green-600 hover:bg-green-500 text-white shadow-green-900/20 active:scale-[0.98]'
+                                        : person.totalDue < -1
+                                            ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/20 active:scale-[0.98]'
+                                            : 'bg-zinc-800/50 text-zinc-500 cursor-not-allowed'
+                                        }`}
+                                >
+                                    {person.totalDue > 1 ? (
+                                        <><Check size={16} /> Settle Balance</>
+                                    ) : person.totalDue < -1 ? (
+                                        <><Check size={16} /> Settle Balance</>
+                                    ) : (
+                                        <><Check size={16} /> All Settled</>
+                                    )}
+                                </button>
+
+
+                            </div>
                         </div>
                     </GlassCard>
                 ))}

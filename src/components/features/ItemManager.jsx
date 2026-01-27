@@ -10,6 +10,7 @@ export default function ItemManager() {
     const [price, setPrice] = useState('');
     const [type, setType] = useState('personal');
     const [assignedTo, setAssignedTo] = useState([]);
+    const [paidBy, setPaidBy] = useState('1'); // Default to Owner ID 1 (or we will find owner in effect)
 
     const togglePerson = (id) => {
         if (assignedTo.includes(id)) {
@@ -41,13 +42,17 @@ export default function ItemManager() {
             name,
             price: parseFloat(price),
             type,
-            assignedTo: finalAssigned
+            assignedTo: finalAssigned,
+            paidBy: paidBy || '1'
         });
         setName('');
         setPrice('');
         setAssignedTo([]);
         setType('personal');
+        setPaidBy('1');
     };
+
+    // Helper to find owner if specific '1' isn't valid, but for now '1' is hardcoded owner in context
 
     return (
         <GlassCard delay={0.2} className="bg-zinc-900/40 border border-zinc-800/40 shadow-xl backdrop-blur-md">
@@ -81,6 +86,27 @@ export default function ItemManager() {
                                 className="w-full bg-zinc-950/30 border border-zinc-800/50 text-zinc-100 rounded-xl pl-7 pr-3 py-3 outline-none focus:border-green-500/30 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-zinc-600"
                             />
                         </div>
+                    </div>
+                </div>
+
+                {/* Paid By Selection */}
+                <div className="bg-zinc-900/50 p-2 rounded-xl border border-zinc-800/50 flex items-center justify-between gap-3 relative mb-3">
+                    <span className="text-xs uppercase font-bold text-zinc-500 tracking-wider ml-2">Paid By</span>
+                    <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hide">
+                        {people.map(p => (
+                            <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => setPaidBy(p.id)}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${paidBy === p.id
+                                        ? 'bg-zinc-700 text-white shadow-md ring-1 ring-white/10'
+                                        : 'text-zinc-500 hover:text-zinc-300'
+                                    }`}
+                            >
+                                <span>{p.emoji}</span>
+                                <span>{p.isOwner ? 'You' : p.name}</span>
+                            </button>
+                        ))}
                     </div>
                 </div>
 

@@ -9,28 +9,35 @@ export default function Summary() {
     const navigate = useNavigate();
 
     const breakdown = people.map(person => {
-        let personalTotal = 0;
-        let sharedTotal = 0;
+        let expenseScope = 0; // Usage/Consumption
+        let amountPaid = 0;   // Contribution
 
         items.forEach(item => {
+            // 1. Calculate Consumption (Expense Scope)
             if (item.assignedTo.includes(person.id)) {
-                if (item.type === 'personal') {
-                    personalTotal += item.price;
-                } else {
-                    sharedTotal += item.price / item.assignedTo.length;
-                }
+                const myShare = (item.type === 'personal' ? item.price : item.price / item.assignedTo.length);
+                expenseScope += myShare;
+            }
+
+            // 2. Calculate Paid Amount
+            const payerId = item.paidBy || (people.find(p => p.isOwner)?.id || '1');
+            if (payerId === person.id) {
+                amountPaid += item.price;
             }
         });
 
         const previous = person.previousBalance || 0;
-        const total = personalTotal + sharedTotal + previous;
+
+        // Net Due = (What I ate) - (What I paid) + (Old Debt)
+        // Positive = I owe money. Negative = I am owed money.
+        const netDue = expenseScope - amountPaid + previous;
 
         return {
             ...person,
-            personalTotal,
-            sharedTotal,
+            personalTotal: expenseScope, // Mapping to existing UI usage (though name is slightly off, we use it for expense column)
+            sharedTotal: 0,              // Unused now as we combined it
             previous,
-            total
+            total: netDue
         };
     });
 
@@ -61,9 +68,8 @@ export default function Summary() {
                     <thead>
                         <tr className="bg-zinc-900/40 text-zinc-500 text-xs uppercase tracking-wider">
                             <th className="p-3 font-bold">Person</th>
-                            <th className="p-3 text-right font-bold hidden sm:table-cell">Current</th>
-                            <th className="p-3 text-right font-bold text-yellow-600">Prev. Due</th>
-                            <th className="p-3 text-right font-bold w-1/4 bg-zinc-900/60 text-zinc-400">Total</th>
+                            <th className="p-3 text-right font-bold w-1/3">Expense Scope</th>
+                            <th className="p-3 text-right font-bold w-1/3 bg-zinc-900/60 text-zinc-400">Net Due</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/40">
@@ -80,19 +86,16 @@ export default function Summary() {
                                     <span className="truncate max-w-[80px] sm:max-w-none">{person.name}</span>
                                     {person.isOwner && <span className="text-[9px] bg-green-900/20 text-green-400 px-1 py-0.5 rounded border border-green-900/30 font-bold tracking-wide">YOU</span>}
                                 </td>
-                                <td className="p-3 text-right text-zinc-500 group-hover:text-zinc-400 hidden sm:table-cell">
+                                <td className="p-3 text-right text-zinc-300 font-bold">
                                     ₹{(person.personalTotal + person.sharedTotal).toFixed(0)}
-                                </td>
-                                <td className="p-3 text-right text-yellow-600/80 font-mono text-xs">
-                                    {person.previous > 0 ? `+₹${person.previous.toFixed(0)}` : '-'}
                                 </td>
                                 <td className="p-3 text-right font-bold text-green-400 bg-green-500/5 border-l border-zinc-800/40 relative group/cell">
                                     <div className="flex items-center justify-end gap-2">
-                                        {person.total > 1 && !person.isOwner && (
+                                        {Math.abs(person.total) > 1 && !person.isOwner && (
                                             <button
                                                 onClick={() => settlePerson(person.id)}
-                                                className="opacity-0 group-hover/cell:opacity-100 p-1 bg-green-500 text-white rounded-full hover:bg-green-400 transition-all shadow-lg transform active:scale-90"
-                                                title="Settle Up (Clear Dues)"
+                                                className={`opacity-0 group-hover/cell:opacity-100 p-1 rounded-full text-white transition-all shadow-lg transform active:scale-90 ${person.total > 0 ? 'bg-green-500 hover:bg-green-400' : 'bg-red-500 hover:bg-red-400'}`}
+                                                title="Settle Up"
                                             >
                                                 <Check size={12} />
                                             </button>

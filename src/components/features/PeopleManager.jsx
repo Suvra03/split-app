@@ -54,15 +54,13 @@ export default function PeopleManager() {
                                 </div>
                             </div>
 
-                            {!person.isOwner && (
-                                <button
-                                    onClick={() => deletePerson(person.id)}
-                                    className="text-zinc-500 hover:text-red-400 transition-colors p-2 opacity-0 group-hover:opacity-100"
-                                    aria-label="Remove person"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
-                            )}
+                            <button
+                                onClick={() => deletePerson(person.id)}
+                                className="text-zinc-500 hover:text-red-400 transition-colors p-2 opacity-0 group-hover:opacity-100"
+                                aria-label="Remove person"
+                            >
+                                <Trash2 size={18} />
+                            </button>
                         </motion.div>
                     ))}
                 </AnimatePresence>
