@@ -49,7 +49,7 @@ export default function Summary() {
     };
 
     return (
-        <GlassCard delay={0.3} className="border-t-4 border-t-green-500 bg-zinc-900/40 shadow-2xl">
+        <GlassCard delay={0.6} className="border-t-4 border-t-green-500 bg-zinc-900/40 shadow-2xl">
             <div className="flex justify-between items-start mb-6">
                 <h2 className="text-xl font-bold text-white flex items-center gap-3 tracking-wide">
                     <span className="p-2 bg-green-500/10 text-green-400 rounded-xl ring-1 ring-green-500/20"><Calculator size={18} /></span>

@@ -55,7 +55,7 @@ export default function ItemManager() {
     // Helper to find owner if specific '1' isn't valid, but for now '1' is hardcoded owner in context
 
     return (
-        <GlassCard delay={0.2} className="bg-zinc-900/40 border border-zinc-800/40 shadow-xl backdrop-blur-md">
+        <GlassCard delay={0.5} className="bg-zinc-900/40 border border-zinc-800/40 shadow-xl backdrop-blur-md">
             <h2 className="text-xl font-bold mb-6 text-white flex items-center gap-3 tracking-wide">
                 <span className="p-2 bg-green-500/10 text-green-400 rounded-xl ring-1 ring-green-500/20"><ShoppingBag size={18} /></span>
                 Items

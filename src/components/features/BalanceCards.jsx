@@ -79,14 +79,19 @@ export default function BalanceCards() {
 
     return (
         <section className="space-y-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-3 tracking-wide px-1">
+            <motion.h2
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-xl font-bold text-white flex items-center gap-3 tracking-wide px-1"
+            >
                 <span className="p-2 bg-green-500/10 text-green-400 rounded-xl ring-1 ring-green-500/20"><TrendingUp size={18} /></span>
                 Active Balances
-            </h2>
+            </motion.h2>
 
             <div className="grid grid-cols-1 gap-4">
                 {activeBalances.map((person, idx) => (
-                    <GlassCard key={person.id} delay={idx * 0.1} className="bg-zinc-900/40 border-zinc-800/40 relative overflow-hidden group min-h-[340px] flex flex-col">
+                    <GlassCard key={person.id} delay={0.3 + idx * 0.1} className="bg-zinc-900/40 border-zinc-800/40 relative overflow-hidden group min-h-[340px] flex flex-col">
                         <div className="absolute top-0 right-0 p-4 opacity-50">
                             <span className="text-6xl grayscale opacity-10 select-none">{person.emoji}</span>
                         </div>
