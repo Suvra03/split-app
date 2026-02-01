@@ -22,54 +22,62 @@ function splitReducer(state, action) {
             };
         case 'ADD_ITEM':
             const { price, assignedTo, name, type, paidBy } = action.payload;
-            // Safe owner check (assuming ID 1 is owner if flag missing, but usually state has it)
-            const ownerId = state.people.find(p => p.isOwner)?.id || '1';
+            const owner = state.people.find(p => p.isOwner) || state.people[0];
+            const actualPayerId = paidBy || (owner ? owner.id : '1');
+            const payerPerson = state.people.find(p => p.id === actualPayerId);
+            const payerName = payerPerson ? payerPerson.name : 'Someone';
 
             return {
                 ...state,
                 items: [...state.items, { ...action.payload, id: uuidv4() }],
                 people: state.people.map(person => {
+                    const isConsumer = assignedTo.includes(person.id);
+                    const isPayer = actualPayerId === person.id;
                     const perPersonShare = type === 'personal' ? price : (price / assignedTo.length);
-                    const payer = paidBy || ownerId;
 
-                    // Case A: Owner Paid (Default)
-                    if (payer === ownerId) {
-                        // If this person consumed it (and is not owner), they owe Owner.
-                        if (assignedTo.includes(person.id) && !person.isOwner) {
-                            const newHistoryItem = {
+                    let newHistory = person.history || [];
+
+                    if (type === 'shared' && isConsumer) {
+                        // For shared items, track everyone's share
+                        const description = isPayer
+                            ? `You paid for ${name} (Shared)`
+                            : `${payerName} paid for ${name}`;
+
+                        newHistory = [{
+                            id: uuidv4(),
+                            date: new Date().toISOString(),
+                            description,
+                            amount: isPayer ? -(price - perPersonShare) : perPersonShare,
+                            type: isPayer ? 'settlement' : 'expense'
+                        }, ...newHistory];
+                    } else if (type === 'personal') {
+                        // For personal items, only track if you owe someone or someone owes you
+                        if (isConsumer && !isPayer) {
+                            // Someone else paid for your personal item
+                            newHistory = [{
                                 id: uuidv4(),
                                 date: new Date().toISOString(),
-                                description: name,
-                                amount: perPersonShare,
+                                description: `${payerName} pays for you`,
+                                amount: price,
                                 type: 'expense'
-                            };
-                            return {
-                                ...person,
-                                history: [newHistoryItem, ...(person.history || [])]
-                            };
-                        }
-                    }
-                    // Case B: This Person Paid
-                    else if (payer === person.id) {
-                        // If they paid for Owner (Owner assigned)
-                        if (assignedTo.includes(ownerId)) {
-                            // Owner owes them -> Credit them.
-                            // To keep it simple as requested: just show it as a credit entry.
-                            const newHistoryItem = {
+                            }, ...newHistory];
+                        } else if (isPayer && !isConsumer) {
+                            // You paid for someone else's personal item
+                            const consumerIds = assignedTo.filter(id => id !== actualPayerId);
+                            const firstConsumer = state.people.find(p => p.id === consumerIds[0]);
+                            const consumerName = firstConsumer ? firstConsumer.name : 'friend';
+
+                            newHistory = [{
                                 id: uuidv4(),
                                 date: new Date().toISOString(),
-                                description: name,
-                                amount: -perPersonShare,
+                                description: `You paid for ${consumerName}`,
+                                amount: -price,
                                 type: 'settlement'
-                            };
-                            return {
-                                ...person,
-                                history: [newHistoryItem, ...(person.history || [])]
-                            };
+                            }, ...newHistory];
                         }
                     }
 
-                    return person;
+                    return { ...person, history: newHistory };
                 })
             };
         case 'DELETE_ITEM':
@@ -142,15 +150,28 @@ function splitReducer(state, action) {
 }
 
 const getInitialState = () => {
-    const saved = localStorage.getItem('split_app_data');
-    if (saved) {
-        return JSON.parse(saved);
+    try {
+        const saved = localStorage.getItem('split_app_data');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            // Basic structural validation
+            if (parsed && Array.isArray(parsed.people) && Array.isArray(parsed.items)) {
+                return {
+                    ...parsed,
+                    reports: Array.isArray(parsed.reports) ? parsed.reports : []
+                };
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load state from localStorage:", e);
     }
+
     return {
         people: [
             { id: '1', name: 'Suvra', isOwner: true, emoji: '👤' }
         ],
         items: [],
+        reports: []
     };
 };
 

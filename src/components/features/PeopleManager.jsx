@@ -37,20 +37,16 @@ export default function PeopleManager() {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className={`flex items-center justify-between p-2 rounded-2xl border transition-all group ${person.isOwner
-                                ? 'bg-green-900/10 border-green-500/20 shadow-sm'
-                                : 'bg-zinc-800/30 border-zinc-700/30 hover:bg-zinc-800/50 hover:border-zinc-600/50'
-                                }`}
+                            className="flex items-center justify-between p-2 rounded-2xl border transition-all group bg-zinc-800/30 border-zinc-700/30 hover:bg-zinc-800/50 hover:border-zinc-600/50"
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 flex items-center justify-center bg-zinc-800/50 rounded-full text-base shadow-sm border border-zinc-700/50">
                                     {person.emoji}
                                 </div>
                                 <div>
-                                    <p className={`font-medium text-sm ${person.isOwner ? 'text-green-200' : 'text-zinc-200'}`}>
+                                    <p className="font-medium text-sm text-zinc-200">
                                         {person.name}
                                     </p>
-                                    {person.isOwner && <p className="text-[9px] uppercase tracking-wider text-green-400/60 font-bold">You</p>}
                                 </div>
                             </div>
 

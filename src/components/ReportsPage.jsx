@@ -10,20 +10,66 @@ function ReportCard({ report, index, onDelete }) {
 
     // ... (rest of component logic unchanged)
 
-    // Calculate Balances for this Snapshot (copy logic for safe replacement or assume rest is same)
-    const breakdown = report.peopleState.map(person => {
-        let totalShare = 0;
+    // Calculate Detailed Debt Breakdown for this Snapshot
+    const debtBreakdown = (() => {
+        const matrix = {}; // matrix[debtorId][creditorId] = amount
+        const people = report.peopleState;
+
+        // Initialize matrix
+        people.forEach(p1 => {
+            matrix[p1.id] = {};
+            people.forEach(p2 => {
+                if (p1.id !== p2.id) matrix[p1.id][p2.id] = 0;
+            });
+        });
+
+        // Calculate debts from items
         report.items.forEach(item => {
-            if (item.assignedTo.includes(person.id)) {
-                if (item.type === 'personal') {
-                    totalShare += item.price;
-                } else {
-                    totalShare += item.price / item.assignedTo.length;
+            const payerId = item.paidBy || (people.find(p => p.isOwner)?.id || '1');
+            const consumers = item.assignedTo;
+            const perPersonShare = (item.type === 'personal' ? item.price : item.price / consumers.length);
+
+            consumers.forEach(consumerId => {
+                if (consumerId !== payerId && matrix[consumerId]) {
+                    matrix[consumerId][payerId] = (matrix[consumerId][payerId] || 0) + perPersonShare;
+                }
+            });
+        });
+
+        // Net the debts (if A owes B 10 and B owes A 5, then A owes B 5)
+        const netDebts = {};
+        people.forEach(p => { netDebts[p.id] = { name: p.name, emoji: p.emoji, owes: [], isOwedBy: [], totalOwe: 0, totalOwed: 0 }; });
+
+        for (let i = 0; i < people.length; i++) {
+            for (let j = i + 1; j < people.length; j++) {
+                const idA = people[i].id;
+                const idB = people[j].id;
+
+                const aOwesB = matrix[idA][idB] || 0;
+                const bOwesA = matrix[idB][idA] || 0;
+
+                if (aOwesB > bOwesA) {
+                    const amount = aOwesB - bOwesA;
+                    if (amount > 0.5) {
+                        netDebts[idA].owes.push({ name: people[j].name, amount });
+                        netDebts[idA].totalOwe += amount;
+                        netDebts[idB].isOwedBy.push({ name: people[i].name, amount });
+                        netDebts[idB].totalOwed += amount;
+                    }
+                } else if (bOwesA > aOwesB) {
+                    const amount = bOwesA - aOwesB;
+                    if (amount > 0.5) {
+                        netDebts[idB].owes.push({ name: people[i].name, amount });
+                        netDebts[idB].totalOwe += amount;
+                        netDebts[idA].isOwedBy.push({ name: people[j].name, amount });
+                        netDebts[idA].totalOwed += amount;
+                    }
                 }
             }
-        });
-        return { ...person, totalShare };
-    });
+        }
+
+        return netDebts;
+    })();
 
     return (
         <GlassCard delay={index * 0.1} className="bg-zinc-900/40 border-zinc-800/40 overflow-hidden group">
@@ -32,7 +78,7 @@ function ReportCard({ report, index, onDelete }) {
                 className="flex justify-between items-center p-1"
             >
                 <div onClick={() => setExpanded(!expanded)} className="flex items-center gap-4 flex-1 cursor-pointer">
-                    <div className="w-12 h-12 bg-zinc-800 rounded-2xl flex items-col flex-col items-center justify-center border border-zinc-700/50 shadow-inner">
+                    <div className="w-12 h-12 bg-zinc-800 rounded-2xl flex flex-col items-center justify-center border border-zinc-700/50 shadow-inner">
                         <span className="text-xs font-bold text-zinc-500 uppercase">{new Date(report.date).toLocaleString('default', { month: 'short' })}</span>
                         <span className="text-lg font-bold text-white leading-none">{new Date(report.date).getDate()}</span>
                     </div>
@@ -69,15 +115,51 @@ function ReportCard({ report, index, onDelete }) {
 
                             {/* People Breakdown */}
                             <div>
-                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider mb-3">User Balances</p>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {breakdown.map(p => (
-                                        <div key={p.id} className="bg-zinc-950/30 p-3 rounded-xl border border-zinc-800/30 flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xl">{p.emoji}</span>
-                                                <span className="text-sm font-medium text-zinc-300">{p.name}</span>
+                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider mb-3 px-1">User Balances & Debts</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-1">
+                                    {Object.entries(debtBreakdown).map(([id, data]) => (
+                                        <div key={id} className="bg-zinc-950/30 p-4 rounded-2xl border border-zinc-800/40 flex flex-col gap-3 min-w-0">
+                                            <div className="flex items-center justify-between border-b border-zinc-800/30 pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xl shrink-0">{data.emoji}</span>
+                                                    <span className="text-sm font-bold text-white truncate">{data.name}</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    {data.totalOwe > 0 ? (
+                                                        <span className="text-[10px] items-center gap-1 font-bold text-red-400 flex justify-end">OWES ₹{data.totalOwe.toFixed(0)}</span>
+                                                    ) : data.totalOwed > 0 ? (
+                                                        <span className="text-[10px] items-center gap-1 font-bold text-green-400 flex justify-end">OWED ₹{data.totalOwed.toFixed(0)}</span>
+                                                    ) : (
+                                                        <span className="text-[10px] font-bold text-zinc-500 uppercase">Settled</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <span className="text-sm font-bold text-green-400">₹{p.totalShare.toFixed(0)}</span>
+
+                                            <div className="space-y-1.5 min-h-[40px]">
+                                                {data.owes.length > 0 && (
+                                                    <div className="space-y-1">
+                                                        {data.owes.map((o, i) => (
+                                                            <div key={i} className="flex justify-between items-center text-[11px] text-zinc-400">
+                                                                <span>Owes {o.name}</span>
+                                                                <span className="font-mono text-zinc-300">₹{o.amount.toFixed(0)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {data.isOwedBy.length > 0 && (
+                                                    <div className="space-y-1">
+                                                        {data.isOwedBy.map((o, i) => (
+                                                            <div key={i} className="flex justify-between items-center text-[11px] text-zinc-500">
+                                                                <span>Owed by {o.name}</span>
+                                                                <span className="font-mono text-green-500/70">₹{o.amount.toFixed(0)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {data.owes.length === 0 && data.isOwedBy.length === 0 && (
+                                                    <p className="text-[10px] text-zinc-600 italic">No debts for this session</p>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

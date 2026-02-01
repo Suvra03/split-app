@@ -104,7 +104,7 @@ export default function ItemManager() {
                                     }`}
                             >
                                 <span>{p.emoji}</span>
-                                <span>{p.isOwner ? 'You' : p.name}</span>
+                                <span>{p.name}</span>
                             </button>
                         ))}
                     </div>
@@ -145,7 +145,7 @@ export default function ItemManager() {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
                         {people.map(person => {
                             const isSelected = assignedTo.includes(person.id);
                             return (
@@ -159,14 +159,14 @@ export default function ItemManager() {
                                             togglePerson(person.id);
                                         }
                                     }}
-                                    className={`relative pl-2 pr-3 py-2 rounded-lg border text-xs flex items-center justify-center gap-1.5 transition-all duration-200 ${isSelected
-                                        ? 'bg-green-500/10 border-green-500/30 text-green-300'
-                                        : 'bg-zinc-950/30 border-zinc-800/50 text-zinc-500 hover:border-zinc-700'
+                                    className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${isSelected
+                                        ? 'bg-zinc-700 text-white shadow-md ring-1 ring-white/10'
+                                        : 'text-zinc-500 hover:text-zinc-300 bg-zinc-900/50'
                                         }`}
                                 >
-                                    <span>{person.emoji}</span>
-                                    <span className="truncate max-w-[60px]">{person.name}</span>
-                                    {isSelected && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-0 right-0 p-0.5"><Check size={8} /></motion.span>}
+                                    <span className="shrink-0">{person.emoji}</span>
+                                    <span>{person.name}</span>
+                                    {isSelected && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 p-0.5 bg-green-500 rounded-full text-black"><Check size={6} /></motion.span>}
                                 </button>
                             )
                         })}

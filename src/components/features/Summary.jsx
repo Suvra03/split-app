@@ -9,35 +9,33 @@ export default function Summary() {
     const navigate = useNavigate();
 
     const breakdown = people.map(person => {
-        let expenseScope = 0; // Usage/Consumption
-        let amountPaid = 0;   // Contribution
+        let shares = [];
+        let totalPaid = 0;
 
         items.forEach(item => {
-            // 1. Calculate Consumption (Expense Scope)
-            if (item.assignedTo.includes(person.id)) {
-                const myShare = (item.type === 'personal' ? item.price : item.price / item.assignedTo.length);
-                expenseScope += myShare;
+            // 1. Calculate Individual Item Share
+            if (item.assignedTo && item.assignedTo.includes(person.id)) {
+                const myShare = (item.type === 'personal' ? item.price : item.price / (item.assignedTo.length || 1));
+                shares.push(myShare);
             }
 
-            // 2. Calculate Paid Amount
-            const payerId = item.paidBy || (people.find(p => p.isOwner)?.id || '1');
+            // 2. Track what this person paid
+            const owner = people.find(p => p.isOwner) || people[0];
+            const payerId = item.paidBy || (owner ? owner.id : '1');
             if (payerId === person.id) {
-                amountPaid += item.price;
+                totalPaid += item.price;
             }
         });
 
+        const expenseScope = shares.reduce((a, b) => a + b, 0);
         const previous = person.previousBalance || 0;
-
-        // Net Due = (What I ate) - (What I paid) + (Old Debt)
-        // Positive = I owe money. Negative = I am owed money.
-        const netDue = expenseScope - amountPaid + previous;
+        const netDue = expenseScope - totalPaid + previous;
 
         return {
             ...person,
-            personalTotal: expenseScope, // Mapping to existing UI usage (though name is slightly off, we use it for expense column)
-            sharedTotal: 0,              // Unused now as we combined it
-            previous,
-            total: netDue
+            shares,
+            totalPaid,
+            netDue
         };
     });
 
@@ -63,13 +61,12 @@ export default function Summary() {
                 </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-zinc-800/40 bg-zinc-950/20">
-                <table className="w-full text-left text-sm border-collapse">
+            <div className="overflow-x-auto rounded-2xl border border-zinc-800/40 bg-zinc-950/20 scrollbar-hide">
+                <table className="w-full text-left text-sm border-collapse min-w-[300px]">
                     <thead>
-                        <tr className="bg-zinc-900/40 text-zinc-500 text-[10px] sm:text-xs uppercase tracking-wider">
-                            <th className="p-2 sm:p-3 font-bold">Person</th>
-                            <th className="p-2 sm:p-3 text-right font-bold w-[30%] sm:w-1/3 leading-tight">Exp. Scope</th>
-                            <th className="p-2 sm:p-3 text-right font-bold w-[30%] sm:w-1/3 bg-zinc-900/60 text-zinc-400">Net Due</th>
+                        <tr className="bg-zinc-900/40 text-zinc-500 text-[9px] sm:text-xs uppercase tracking-wider">
+                            <th className="p-3 font-bold">Person</th>
+                            <th className="p-3 text-right font-bold w-1/2">Net Due (Breakdown = Total)</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/40">
@@ -81,29 +78,44 @@ export default function Summary() {
                                 transition={{ delay: idx * 0.1 + 0.4 }}
                                 className="group hover:bg-zinc-800/20 transition-colors"
                             >
-                                <td className="p-1.5 sm:p-3 font-medium text-zinc-200 flex items-center gap-1.5">
-                                    <span className="text-xs sm:text-lg bg-zinc-800/40 w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center rounded border border-zinc-700/30">{person.emoji}</span>
-                                    <span className="truncate max-w-[65px] sm:max-w-none text-[10px] sm:text-sm">{person.name}</span>
-                                    {person.isOwner && <span className="text-[7px] sm:text-[9px] bg-green-900/20 text-green-400 px-0.5 py-0 rounded border border-green-900/30 font-bold tracking-wide">YOU</span>}
+                                <td className="p-3 font-medium text-zinc-200">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-base sm:text-lg bg-zinc-800/40 w-6 h-6 flex items-center justify-center rounded border border-zinc-700/30 shrink-0">{person.emoji}</span>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="truncate text-xs sm:text-sm">{person.name}</span>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td className="p-1.5 sm:p-3 text-right text-zinc-300 font-bold text-[10px] sm:text-sm">
-                                    ₹{(person.personalTotal + person.sharedTotal).toFixed(0)}
-                                </td>
-                                <td className="p-1.5 sm:p-3 text-right font-bold text-green-400 bg-green-500/5 border-l border-zinc-800/40 relative group/cell text-[10px] sm:text-sm">
-                                    <div className="flex items-center justify-end gap-1 sm:gap-2">
-                                        {Math.abs(person.total) > 1 && !person.isOwner && (
-                                            <button
-                                                onClick={() => settlePerson(person.id)}
-                                                className={`opacity-100 sm:opacity-0 sm:group-hover/cell:opacity-100 p-0.5 rounded-full text-white transition-all shadow-lg transform active:scale-90 ${person.total > 0 ? 'bg-green-500 hover:bg-green-400' : 'bg-red-500 hover:bg-red-400'}`}
-                                                title="Settle Up"
-                                            >
-                                                <Check size={8} className="sm:w-3 sm:h-3" />
-                                            </button>
-                                        )}
-                                        {Math.abs(person.total) < 1 && !person.isOwner && (
-                                            <span className="text-green-500 flex items-center"><Check size={10} className="sm:w-[14px] sm:h-[14px]" /></span>
-                                        )}
-                                        <span>₹{Math.max(0, person.total).toFixed(0)}</span>
+
+                                <td className="p-3 text-right font-bold relative group/cell">
+                                    <div className="flex flex-col items-end gap-1">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {person.netDue > 1 && (
+                                                <button
+                                                    onClick={() => settlePerson(person.id)}
+                                                    className="opacity-100 sm:opacity-0 sm:group-hover/cell:opacity-100 p-1 rounded-full bg-green-500 hover:bg-green-400 text-white transition-all shadow-lg transform active:scale-90"
+                                                    title="Settle Up"
+                                                >
+                                                    <Check size={10} />
+                                                </button>
+                                            )}
+
+                                            {person.shares.length > 0 ? (
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-[10px] sm:text-xs text-zinc-500 font-mono tracking-tighter">
+                                                        {person.shares.map(s => `₹${(s || 0).toFixed(0)}`).join(' + ')}
+                                                        {(person.previousBalance || 0) > 0 && ` + ₹${(person.previousBalance || 0).toFixed(0)} (old)`}
+                                                    </span>
+                                                    <span className={`text-xs sm:text-sm ${person.netDue > 0 ? 'text-green-400' : 'text-blue-400'}`}>
+                                                        {person.netDue > 0 ? `₹${(person.netDue || 0).toFixed(0)}` : person.totalPaid > 0 ? `PAID ₹${(person.totalPaid || 0).toFixed(0)}` : 'SETTLED'}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className={`text-xs sm:text-sm ${person.totalPaid > 0 ? 'text-blue-400' : 'text-zinc-600'}`}>
+                                                    {person.totalPaid > 0 ? `PAID ₹${person.totalPaid.toFixed(0)}` : 'No Activity'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="absolute inset-0 bg-green-500/0 group-hover:bg-green-500/5 transition-colors pointer-events-none" />
                                 </td>
