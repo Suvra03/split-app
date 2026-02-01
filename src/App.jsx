@@ -53,18 +53,17 @@ function Dashboard() {
 
       <footer className="text-center text-zinc-500 text-sm mt-20 pb-12 flex flex-col items-center gap-6">
         <div className="flex flex-col items-center gap-2">
-          <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-600">Created with Passion</p>
           <a
             href="https://github.com/Suvra03"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-3 bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-green-500/30 px-5 py-2.5 rounded-2xl transition-all shadow-xl hover:shadow-green-500/5"
+            className="group flex items-center gap-2 transition-all"
           >
-            <span className="text-zinc-400 group-hover:text-zinc-200 transition-colors">Design and Developed by</span>
-            <span className="text-green-400 font-bold group-hover:text-green-300 transition-colors underline-offset-4 decoration-1 decoration-green-500/30 group-hover:underline">Suvra Kinkar</span>
-            <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center grayscale group-hover:grayscale-0 transition-all">
-              <img src="https://github.com/Suvra03.png" alt="Suvra Kinkar" className="w-full h-full rounded-full border border-zinc-700" />
-            </div>
+            <span className="text-zinc-500 group-hover:text-zinc-400 transition-colors text-xs font-medium">Design & Developed by</span>
+            <span className="text-green-500/80 font-bold group-hover:text-green-400 transition-all text-xs tracking-tight relative">
+              Suvra Kinkar
+              <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-green-500/40 group-hover:w-full transition-all duration-300" />
+            </span>
           </a>
         </div>
         <div className="flex flex-col items-center gap-3">
